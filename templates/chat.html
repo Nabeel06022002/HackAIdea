@@ -1,81 +1,454 @@
-<link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
-<script src="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-
 <!DOCTYPE html>
-<html>
-	<head>
-		<title>Chatbot</title>
-		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
-		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
-		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css')}}"/>
-	</head>
-	
-	
-	<body>
-		<div class="container-fluid h-100">
-			<div class="row justify-content-center h-100">		
-				<div class="col-md-8 col-xl-6 chat">
-					<div class="card">
-						<div class="card-header msg_head">
-							<div class="d-flex bd-highlight">
-								<div class="img_cont">
-									<img src="https://seekvectors.com/files/download/hsbc-logo-01.jpg" class="rounded-circle user_img">
-									<!-- <img src="https://www.prdistribution.com/spirit/uploads/pressreleases/2019/newsreleases/d83341deb75c4c4f6b113f27b1e42cd8-chatbot-florence-already-helps-thousands-of-patients-to-remember-their-medication.png" class="rounded-circle user_img"> -->
-									<!-- <span class="online_icon"></span> -->
-								</div>
-								<div class="user_info">
-									<span>Confluence Chatbot</span>
-									<p>Ask me anything!</p>
-								</div>
-							</div>
-						</div>
-						<div id="messageFormeight" class="card-body msg_card_body">
-							
-							
-						</div>
-						<div class="card-footer">
-							<form id="messageArea" class="input-group">
-                                <input type="text" id="text" name="msg" placeholder="Type your message..." autocomplete="off" class="form-control type_msg" required/>
-								<div class="input-group-append">
-									<button type="submit" id="send" class="input-group-text send_btn"><i class="fas fa-location-arrow"></i></button>
-								</div>
-							</form>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		
-		<script>
-			$(document).ready(function() {
-				$("#messageArea").on("submit", function(event) {
-					const date = new Date();
-					const hour = date.getHours();
-					const minute = date.getMinutes();
-					const str_time = hour+":"+minute;
-					var rawText = $("#text").val();
+<html lang="en">
 
-					var userHtml = '<div class="d-flex justify-content-end mb-4"><div class="msg_cotainer_send">' + rawText + '<span class="msg_time_send">'+ str_time + '</span></div><div class="img_cont_msg"><img src="https://i.ibb.co/d5b84Xw/Untitled-design.png" class="rounded-circle user_img_msg"></div></div>';
-					
-					$("#text").val("");
-					$("#messageFormeight").append(userHtml);
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HSBC Confluence Chatbot</title>
 
-					$.ajax({
-						data: {
-							msg: rawText,	
-						},
-						type: "POST",
-						url: "/get",
-					}).done(function(data) {
-						var botHtml = '<div class="d-flex justify-content-start mb-4"><div class="img_cont_msg"><img src="https://cdn-icons-png.flaticon.com/512/387/387569.png" class="rounded-circle user_img_msg"></div><div class="msg_cotainer">' + data + '<span class="msg_time">' + str_time + '</span></div></div>';
-						$("#messageFormeight").append($.parseHTML(botHtml));
-					});
-					event.preventDefault();
-				});
-			});
-		</script>
-        
-    </body>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" />
+<link rel="icon" type="image/png" href="https://cdn.icon-icons.com/icons2/2699/PNG/64/hsbc_logo_icon_170012.png" />
+
+<style>
+    body {
+        margin: 0;
+        background: #f7f7f7;
+        font-family: 'Inter', sans-serif;
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+    }
+
+    .layout {
+        display: flex;
+        width: 100%;
+        height: 100vh;
+    }
+
+    /* ---------------- SIDEBAR ---------------- */
+    .sidebar {
+        width: 260px;
+        background: #ffffff;
+        border-right: 1px solid #e0e0e0;
+        display: flex;
+        flex-direction: column;
+        transition: width 0.3s ease;
+        overflow: hidden;
+    }
+
+    .sidebar.collapsed {
+        width: 60px !important;
+    }
+
+    .sidebar-header {
+        height: 76px;
+        background: #b71c1c;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        justify-content: space-between;
+        border-bottom: 1px solid #9f1a1a;
+    }
+
+    .sidebar-title {
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .sidebar.collapsed .sidebar-title,
+    .sidebar.collapsed .chat-list {
+        display: none;
+    }
+
+    /* ---------------- NEW CHAT BUTTON ---------------- */
+    .new-chat-btn {
+        margin: 15px;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #b71c1c;
+        background: #ffffff;
+        cursor: pointer;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-weight: 500;
+        color: #b71c1c;
+        transition: 0.3s ease, transform 0.2s ease;
+    }
+
+    .new-chat-btn:hover {
+        background: #f4d4d4;
+        transform: scale(1.05);
+    }
+
+    /* Collapsed state: circular chat icon button */
+    .new-chat-btn.collapsed-btn {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 50%;
+        font-size: 18px;
+        justify-content: center;
+        align-items: center;
+        display: flex;
+    }
+
+    .new-chat-btn.collapsed-btn i {
+        margin: 0;
+        line-height: 40px;
+    }
+
+    .sidebar.collapsed .new-chat-btn {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .hamburger {
+        font-size: 22px;
+        cursor: pointer;
+        color: white;
+        padding: 8px 10px;
+        border-radius: 6px;
+    }
+
+    .chat-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px 12px 20px;
+    }
+
+    .chat-item {
+        padding: 14px;
+        border-radius: 6px;
+        cursor: pointer;
+        margin-bottom: 8px;
+        transition: 0.2s;
+        font-size: 14px;
+    }
+
+    .chat-item:hover {
+        background: #f5f5f5;
+    }
+
+    .chat-item.active {
+        background: #fbeaea;
+        border: 1px solid #b71c1c;
+        color: #8e0000;
+        font-weight: 500;
+    }
+
+    /* ---------------- CHAT AREA ---------------- */
+    .chat-area {
+        flex-grow: 1;
+        height: 100vh;
+        background: #fbeaea; /* unified background */
+        transition: width 0.3s ease;
+        width: calc(100% - 260px);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-area.expanded {
+        width: calc(100% - 60px) !important;
+    }
+
+    .chat-header {
+        height: 76px;
+        background: #b71c1c;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        padding: 0 22px;
+        gap: 15px;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .chat-logo {
+        width: 42px;
+        height: 42px;
+        border-radius: 8px;
+        object-fit: contain;
+    }
+
+    .chat-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 28px 22px;
+        background: #fff5f5; /* unified background */
+    }
+
+    .msg-row {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 26px;
+        gap: 12px;
+    }
+
+    .msg {
+        max-width: 750px; /* keeps the bubble from being too wide */
+        padding: 14px 18px;
+        border-radius: 10px;
+        font-size: 15px;
+        background: #fff5f5; 
+        border: 1px solid #b71c1c;
+
+        /* Add these for proper text wrapping */
+        word-wrap: break-word;  /* older support */
+        overflow-wrap: break-word; /* modern support */
+        white-space: pre-wrap; /* preserves line breaks if user presses Enter */
+    }
+
+    .msg-user {
+        margin-left: auto;
+        color: #600000;
+    }
+
+    .msg-bot {
+        color: #000000;
+    }
+
+    /* ---------------- SUGGESTED CHIPS ---------------- */
+    .suggested-box {
+        padding: 12px 20px;
+        background: #fbeaea; /* unified background */
+        border-top: none;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        justify-content: center;
+    }
+
+    .suggested-chip {
+        padding: 10px 20px;
+        background: #fbeaea; /* unified background */
+        border-radius: 30px;
+        font-size: 14px;
+        cursor: pointer;
+        white-space: nowrap;
+        border: 1px solid #b71c1c;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+        transition: 0.2s ease;
+    }
+
+    .suggested-chip:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(0,0,0,0.18);
+    }
+
+    /* ---------------- ASK ANYTHING INPUT ---------------- */
+    .chat-footer {
+        padding: 16px 22px;
+        background: #fbeaea; /* unified background */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .chat-input-wrapper {
+        width: 100%;
+        background: #fff5f5; /* unified background */
+        border-radius: 30px;
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        border: 1px solid #b71c1c;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.10);
+    }
+
+    .chat-input {
+        flex: 1;
+        border: none;
+        background: transparent;
+        font-size: 15px;
+        outline: none;
+    }
+
+    .send-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        color: #000;
+        padding-left: 10px;
+        transition: 0.25s ease;
+    }
+
+    .send-btn:hover {
+        color: #b71c1c;
+        transform: translateY(-2px) scale(1.15);
+    }
+
+</style>
+</head>
+
+<body>
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebar">
+
+        <div class="sidebar-header">
+            <span class="sidebar-title">Chats</span>
+            <i class="fas fa-bars hamburger" id="toggleSidebar"></i>
+        </div>
+
+        <button class="new-chat-btn" id="newChatBtn">
+            <i class="fas fa-plus"></i>
+            <span class="btn-text">New Chat</span>
+        </button>
+
+        <div id="chatList" class="chat-list"></div>
+    </div>
+
+    <!-- MAIN CHAT AREA -->
+    <div class="chat-area" id="chatArea">
+
+        <div class="chat-header">
+            <img src="https://seekvectors.com/files/download/hsbc-logo-01.jpg" class="chat-logo" />
+            <div class="chat-title">HSBC Confluence Chatbot</div>
+        </div>
+
+        <div id="message-area" class="chat-body"></div>
+
+        <div class="suggested-box">
+            <div class="suggested-chip">Onboarding process</div>
+            <div class="suggested-chip">Reset VPN</div>
+            <div class="suggested-chip">Project docs</div>
+            <div class="suggested-chip">Contact IT</div>
+            <div class="suggested-chip">Leave policy</div>
+            <div class="suggested-chip">Laptop issues</div>
+            <div class="suggested-chip">Helpdesk ticket</div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="chat-footer">
+            <div class="chat-input-wrapper">
+                <input type="text" id="text" class="chat-input" placeholder="Ask anything..." />
+                <button class="send-btn" id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const input = document.getElementById('text');
+    const sendBtn = document.getElementById('sendBtn');
+    const chat = document.getElementById('message-area');
+    const newChatBtn = document.getElementById('newChatBtn');
+    const chatList = document.getElementById('chatList');
+    const sidebar = document.getElementById('sidebar');
+    const toggleSidebar = document.getElementById('toggleSidebar');
+    const chatArea = document.getElementById('chatArea');
+
+    let chats = [];
+    let currentChatIndex = -1;
+
+    function createNewChat() {
+        chats.push([]);
+        currentChatIndex = chats.length - 1;
+        renderChatList();
+        loadChat();
+    }
+
+    function renderChatList() {
+        chatList.innerHTML = '';
+        chats.forEach((c, i) => {
+            const item = document.createElement('div');
+            item.className = 'chat-item' + (i === currentChatIndex ? ' active' : '');
+            item.textContent = 'Chat ' + (i + 1);
+            item.onclick = () => {
+                currentChatIndex = i;
+                renderChatList();
+                loadChat();
+            };
+            chatList.appendChild(item);
+        });
+    }
+
+    function addMessage(text, type) {
+        const row = document.createElement('div');
+        row.className = 'msg-row';
+
+        const icon = document.createElement('div');
+        icon.className = 'msg-icon';
+        icon.innerHTML =
+            type === 'user'
+                ? '<i class="fas fa-user"></i>'
+                : '<i class="fas fa-robot"></i>';
+
+        const msg = document.createElement('div');
+        msg.className = type === 'user' ? 'msg msg-user' : 'msg msg-bot';
+        msg.textContent = text;
+
+        if (type === 'user') {
+            row.appendChild(msg);
+            row.appendChild(icon);
+        } else {
+            row.appendChild(icon);
+            row.appendChild(msg);
+        }
+
+        chat.appendChild(row);
+        chat.scrollTop = chat.scrollHeight;
+
+        chats[currentChatIndex].push({ text, type });
+    }
+
+    function loadChat() {
+        chat.innerHTML = '';
+        chats[currentChatIndex].forEach((m) =>
+            addMessage(m.text, m.type)
+        );
+    }
+
+    sendBtn.onclick = () => {
+        const text = input.value.trim();
+        if (!text || currentChatIndex === -1) return;
+
+        addMessage(text, 'user');
+        input.value = '';
+
+        setTimeout(() => addMessage('This is a sample bot response.', 'bot'), 600);
+    };
+
+    input.addEventListener("keypress", function (e) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            sendBtn.click();
+        }
+    });
+
+    document.querySelectorAll(".suggested-chip").forEach(chip => {
+        chip.addEventListener("click", () => {
+            input.value = chip.textContent;
+            input.focus();
+            input.setSelectionRange(input.value.length, input.value.length);
+        });
+    });
+
+    toggleSidebar.onclick = () => {
+        sidebar.classList.toggle("collapsed");
+        chatArea.classList.toggle("expanded");
+
+        // Update New Chat button appearance
+        if (sidebar.classList.contains("collapsed")) {
+            newChatBtn.classList.add("collapsed-btn");
+            newChatBtn.innerHTML = '<i class="fas fa-comments"></i>';
+        } else {
+            newChatBtn.classList.remove("collapsed-btn");
+            newChatBtn.innerHTML = '<i class="fas fa-plus"></i> <span class="btn-text">New Chat</span>';
+        }
+    };
+
+    newChatBtn.onclick = createNewChat;
+    createNewChat();
+</script>
+
+</body>
 </html>
