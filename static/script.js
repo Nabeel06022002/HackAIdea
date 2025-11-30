@@ -92,6 +92,8 @@ function addThinking() {
     return addMessage(thinkingDots, 'thinking');
 }
 
+
+/* --------------------------- UPDATED FUNCTION --------------------------- */
 async function sendMessage() {
     const text = input.value.trim();
     if (!text || currentChatIndex === -1) return;
@@ -110,11 +112,36 @@ async function sendMessage() {
             body: formData
         });
 
-        const botReply = await response.text();
-        const cleanReply = sanitizeMessage(botReply);
+        // ← CHANGED: read JSON, not text
+        const data = await response.json();
 
-        thinkingMsg.innerHTML = cleanReply;
-        chats[currentChatIndex].push({ text: cleanReply, type: 'bot' });
+        const answer = sanitizeMessage(data.answer);
+        const citations = data.citations || [];
+
+        let citationHTML = "";
+        if (citations.length > 0) {
+
+            const uniqueUrls = [...new Set(
+                citations
+                    .map(c => c.page_url)
+                    .filter(url => url && url.trim() !== "")
+            )];
+
+            if (uniqueUrls.length > 0) {
+                citationHTML = `<div style="margin:0; padding:0; line-height:1; text-align:left; font-size:14px;">
+                <strong style="display:block; margin:0; padding:0;">Sources:</strong><br>${uniqueUrls.map(url => `<a href="${url.trim()}" target="_blank" style="text-decoration:none; display:block; margin:0; padding:0; line-height:1; position:relative; padding-left:12px;">&#8226; ${url.trim()}</a>`).join('')}`;
+
+            }
+        }
+        
+
+        // ← CHANGED: show answer + citations in chat
+        thinkingMsg.innerHTML = answer + citationHTML;
+
+        chats[currentChatIndex].push({
+            text: answer + citationHTML,
+            type: 'bot'
+        });
 
     } catch (err) {
         thinkingMsg.innerHTML = "Error: Could not reach server.";
@@ -124,6 +151,7 @@ async function sendMessage() {
         });
     }
 }
+/* ------------------------- END UPDATED FUNCTION -------------------------- */
 
 sendBtn.onclick = sendMessage;
 

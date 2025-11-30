@@ -55,15 +55,30 @@ def index():
     return render_template('chat.html')
 
 
-
 @app.route("/get", methods=["GET", "POST"])
 def chat():
     msg = request.form["msg"]
-    input = msg
-    print(input)
+    print("User Input:", msg)
+
     response = rag_chain.invoke({"input": msg})
-    print("Response : ", response["answer"])
-    return str(response["answer"])
+
+    answer = response["answer"]
+    docs = response["context"]   # retrieved documents
+
+    citations = []
+    for doc in docs:
+        meta = doc.metadata
+
+        citations.append({
+            "source": meta.get("source"),
+            "page_url": meta.get("page_url"),
+            "score": meta.get("score"),  # optional if stored
+        })
+
+    return {
+        "answer": answer,
+        "citations": citations
+    }
 
 
 if __name__ == '__main__':
